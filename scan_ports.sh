@@ -52,37 +52,40 @@ Local_Close_Count=0
 
 # >>>>>>>>>>>>>>>>>>>>>>>>全部函数>>>>>>>>>>>>>>>>>>>>>>>>
 
-#显示帮助函数
+#函数功能：显示帮助
 show_Help(){
   cat <<EOF
 用法:
-$0 [--sourcefile /path/to/source/ip/file] [--destfile /path/to/destination/ip/file] [-s source_ip_format] [-d destination_ip_format] <-p port>  [-h]
--l 开启本地主机模式
--t 设置telnet超时而被timeout结束的默认时间,不然取变量默认值
--s 源IP地址,ip格式支持3种:1是192.168.1.1;2是192.168.1-254;3是192.168.1.1/24(cidr)source ip format,192.168.0.1 or 192.168.0.1-16(from 192.168.0.1 to 192.168.0.16) or 192.168.0.128/25 or 192.168.0.1,192.168.0.1-16,192.168.0.128/25
--d destination ip format,same as source ip format
---sourcefile Path to a souce ip file
---destfile Path to a destination ip file
--p port format,80 or 1000-2000(from 1000 to 2000) or 22,80(scan 22 and 80) or 20,80,1080-1090,8080,9090(20\80\from 1080 to 1090\8080\9090)
--h display this help and exit
+$0 [-l] [-t timeout_second] [--sourcefile /path/to/source/ip/file] [--destfile /path/to/destination/ip/file] [-s source_ip_format] [-d destination_ip_format] [-p port] [-h]
+-l 开启本地主机扫描模式 当开启本地主机模式，注意：-s、--sourcefile参数里面源IP将回失去作用！
+-t 设置telnet超时而被timeout命令结束的时间 不设置则取变量默认值
+-s 源IP地址 要用于从跳板机ssh登录的远程主机，ssh要免密，不然还是使用本地主机模式。ip格式支持3种:1是192.168.1.1;2是192.168.1-254;3是192.168.1.1/24(cidr),这3种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-s 192.168.1.1,192.168.15、-s 192.168.1.1,192.168.1.15-20,192.168.1.0/25。
+-d 目的IP地址 格式和源IP地址一样。
+--sourcefile 源IP地址所在的文件路径 如果源IP地址很多而且没有规律，这个场景可以把这些IP放到一个文件中，一行建议只写一种IP格式。
+--destfile 目的IP地址所在的文件路径 要求与--sourcefile参数一样
+-p 端口 端口格式支持2种：1是80；2是1000-1050，这2种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-p 22,80,443、-p 80,443,1080-1090,9090-9095。
+-h 显示帮助
 EOF
   exit
 }
 
+#函数功能：显示错误代码解释
 show_Error_Codes(){
   cat <<EOF
-Error Codes Explain:
-ERR-1:IP format Error!,please input valid ip format!
-ERR-2:port must be a number between 1 to 65535,number of ports between 1 to 10000,number of Ips between 1 to 1000!
-ERR-3:Ip or port ranges start number must less then end number!
-ERR-4:file is not exsit!
-ERR-5:file is not readable!
-ERR-6:Option value is empty!
-ERR-7:Comand is not installed  in system!
+错误代码解释:
+ERR-1:IP格式输入错误,请检查格式与帮助(-h)中格式一致!
+ERR-2:目的IP地址数量限制为1～1000，扫描端口(-p)数量范围限制为1-1000，telnet超时而被timeout结束的时间(-t)限制为1-10秒，如果是远程主机扫描模式,源IP地址数量限制范围为1～1000。IP的范围格式数值限制范围为0～255，IP的cidr格式的可变长子网掩码数值限制为20-32(内网大于20网络划分以上没有意义)。端口范围格式数值限制为1-65535。
+ERR-3:IP和端口范围格式，范围结束值不能小于范围起始值。如192.168.1.12-15中15大于12、1080-1085中1085大于1080。
+ERR-4:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不存在！
+ERR-5:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不可读！
+ERR-6:脚本参数值(-t)为空或没有输入会导致脚本退出！
+ERR-7:某些命令(ssh、telnet、timeout)没有安装！
 EOF
   exit
 }
 
+#函数功能：检测参数1是否存在
+#需要1个参数：所要检测的命令
 check_Command_Exsit(){
   local temp_command="$1"
   if ! [ -x "$( command -v "${temp_command}" )" ]; then
@@ -91,12 +94,15 @@ check_Command_Exsit(){
   fi
 }
 
+#函数功能：脚本初始化检测，telnet、timeout命令是否存在，脚本所在目录是否有写权限
 initial(){
   check_Command_Exsit telnet
   check_Command_Exsit timeout
   [[ ! -w "${BaseDir}" ]] && exit
 }
 
+#函数功能：过滤$1中的前后空格，这里主要用于处理源、目的IP地址所在的文件路径中IP数据前后空格
+#需要1个参数：所需要过滤的字符
 trim() {
     local var=$1
     var=${var##+([[:space:]])}
@@ -104,6 +110,10 @@ trim() {
     echo -n "$var"
 }
 
+#函数功能：检测一个数字是否在非负整数集合范围内
+#所需参数1：所需检测的数字
+#所需参数2：非负整数集合范围起始值(包含)
+#所需参数3：非负整数集合范围结束值(包含)
 valid_Number_Range(){
   local temp_number="$1"
   local temp_min_number="$2"
@@ -125,6 +135,8 @@ valid_Number_Range(){
   fi
 }
 
+#函数功能：检测参数1是否是一个合理的IP地址
+#所需参数1：所要检测的IP
 valid_Ip(){ 
     local ip=$1 
     local stat=1
@@ -142,6 +154,8 @@ valid_Ip(){
     fi
 } 
 
+#函数功能：把IP范围格式参数1生成范围内IP
+#所需参数1：IP范围格式
 generate_Ip_ranges() {
   local tmp_argument="$1"
   local a b c
@@ -160,12 +174,14 @@ generate_Ip_ranges() {
   eval "echo ${a}.${b}.${c}.{$start_ip_number..$end_ip_number}"
 }
 
+#函数功能：把IP的cidr格式参数1生成范围内IP
+#所需参数1：IP的cidr格式
 cidr_Tansfer_To_Ip_Ranges(){
   local cidr="$1"
   base=${cidr%/*}
   masksize=${cidr#*/}
 
-  valid_Number_Range "$masksize" 16 32
+  valid_Number_Range "$masksize" 20 32
   
   mask=$(( 0xFFFFFFFF << (32 - masksize) ))
   
@@ -181,12 +197,12 @@ cidr_Tansfer_To_Ip_Ranges(){
   done
 }
 
+#函数功能：处理IP几种格式核心处理调用函数
 deal_With_Ip_Format(){
   local cs_ip="$1"
   case "$cs_ip" in
     *-*)
       for ip in $(generate_Ip_ranges "${cs_ip}") ; do
-      ip=$(trim "$ip")
       if valid_Ip "$ip" ; then 
       eval "$2+=('$ip')"
       fi
@@ -194,7 +210,6 @@ deal_With_Ip_Format(){
     ;;
     */*)
       for ip in $(cidr_Tansfer_To_Ip_Ranges "${cs_ip}") ; do
-        ip=$(trim "$ip")
         if valid_Ip "$ip" ; then
           eval "$2+=('$ip')"
         fi
@@ -208,6 +223,7 @@ deal_With_Ip_Format(){
   esac
 }
 
+#函数功能：处理脚本参数中IP的几种IP格式
 check_Ip_Parameter(){
   case "$1" in
     *,*)
@@ -222,6 +238,7 @@ check_Ip_Parameter(){
   esac
 }
 
+#函数功能：处理源、目的IP地址所在的文件路径中IP数据
 check_File_Parameter(){
   local file_path="$1"
 
@@ -244,6 +261,7 @@ check_File_Parameter(){
   
 }
 
+#函数功能：处理端口几种格式核心处理调用函数
 deal_With_Ports_Format(){
   local cs_port="$1"
   
@@ -270,6 +288,7 @@ deal_With_Ports_Format(){
   esac
 }
 
+#函数功能：处理脚本参数中端口的几种端口格式
 check_Ports(){
   case $1 in
     *,*)
@@ -284,8 +303,7 @@ check_Ports(){
   esac
 }
 
-
-
+#函数功能：用于远程主机扫描核心处理和输出
 base_On_SSH_Scan_Engine(){
   mkdir -p "${Ssh_Telnet_Scan_Result}"
   printf "%-11b%-30b%-20b%-9b%-11b\n" "Number" "SourceHost" "DestinationHost" "Port" "Result"
@@ -322,6 +340,7 @@ base_On_SSH_Scan_Engine(){
   done
 }
 
+#函数功能：用于本地主机扫描核心处理和输出
 base_On_Local_Scan_Engine(){
   mkdir -p "${Local_Telnet_Scan_Result}"
   printf "%-11b%-15b%-20b%-9b%-11b\n" "Number" "SourceHost" "DestinationHost" "Port" "Result"
@@ -347,6 +366,7 @@ base_On_Local_Scan_Engine(){
   
 }
 
+#函数功能：用于呈现远处主机扫描结果报告
 build_Ssh_Scan_Report(){
   printf "Report:\nTotal Source Ip Number:%d,Total Destiantion Ip Number:%d,Total Ports:%d,Total Scan Number:%d\n" "${#All_Source_Ip[@]}" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Ssh_Count}"
   printf "Connected Port Number:%d\n" "${Ssh_Connected_Count}"
@@ -356,6 +376,7 @@ build_Ssh_Scan_Report(){
   printf "Failed Login Server Number:%d,Failed to scan port number:%d\n" "${Failed_Ssh_Server}" "$(( Failed_Ssh_Server * ${#All_Destination_Ip[@]} * ${#All_Ports[@]} ))"
 }
 
+#函数功能：用于呈现本地主机扫描结果报告
 build_Local_Scan_Report(){
   printf "Report:\nTotal Ip Number:%d\tTotal Ports:%d\tTotal Scan Number:%d\n" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Local_Count}"
   printf "Connected Port Number:%d\n" "${Local_Connected_Count}"
@@ -363,6 +384,7 @@ build_Local_Scan_Report(){
   printf "Close Port Number:%d\n" "${Local_Close_Count}"
 }
 
+#函数功能：主函数用处判断脚本参数并调用其他函数
 main(){
   initial
 
@@ -426,10 +448,10 @@ main(){
   done
 
   valid_Number_Range "${#All_Destination_Ip[@]}" 1 1000
-  valid_Number_Range "${#All_Ports[@]}" 1 10000
+  valid_Number_Range "${#All_Ports[@]}" 1 1000
 
   Telnet_Time_OUT_Second="${Telnet_Time_OUT_Second:-$Default_Telnet_Time_Out_Second}"
-  valid_Number_Range "$Telnet_Time_OUT_Second" 1 20
+  valid_Number_Range "$Telnet_Time_OUT_Second" 1 10
 
   if [ "$Localhost_Scan_Mode" = "TRUE" ]; then
     All_Source_Ip=()
@@ -444,4 +466,5 @@ main(){
 }
 # >>>>>>>>>>>>>>>>>>>>>>>>全部函数>>>>>>>>>>>>>>>>>>>>>>>>
 
+#传参数给主函数处理
 main "$@"
