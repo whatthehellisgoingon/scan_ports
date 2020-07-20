@@ -74,7 +74,7 @@ show_Error_Codes(){
   cat <<EOF
 错误代码解释:
 ERR-1:IP格式输入错误,请检查格式与帮助(-h)中格式一致!
-ERR-2:目的IP地址数量限制为1～1000，扫描端口(-p)数量范围限制为1-1000，telnet超时而被timeout结束的时间(-t)限制为1-10秒，如果是远程主机扫描模式,源IP地址数量限制范围为1～1000。IP的范围格式数值限制范围为0～255，IP的cidr格式的可变长子网掩码数值限制为20-32(内网大于20网络划分以上没有意义)。端口范围格式数值限制为1-65535。
+ERR-2:目的IP地址数量限制为1～1000，扫描端口(-p)数量范围限制为1-1000，telnet超时而被timeout结束的时间(-t)限制为1-10秒，如果是远程主机扫描模式,源IP地址数量限制范围为1～1000。IP的范围格式数值限制范围为0～255，IP的cidr格式的可变长子网掩码数值限制为20-32(内网大于20网络划分以上没有意义)。端口范围格式数值限制为1-65535。如果你需要跑超过1000个IP或端口的扫描,请分多次后台或多个终端界面跑脚本。
 ERR-3:IP和端口范围格式，范围结束值不能小于范围起始值。如192.168.1.12-15中15大于12、1080-1085中1085大于1080。
 ERR-4:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不存在！
 ERR-5:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不可读！
@@ -306,7 +306,7 @@ check_Ports(){
 #函数功能：用于远程主机扫描核心处理和输出
 base_On_SSH_Scan_Engine(){
   mkdir -p "${Ssh_Telnet_Scan_Result}"
-  printf "%-11b%-30b%-20b%-9b%-11b\n" "Number" "SourceHost" "DestinationHost" "Port" "Result"
+  printf "%-15b%-35b%-20b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for source_hosts in "${All_Source_Ip[@]}" ; do
     ssh -q -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "hello@${source_hosts}" 'exit 0'
     local ssh_status=$?
@@ -343,7 +343,7 @@ base_On_SSH_Scan_Engine(){
 #函数功能：用于本地主机扫描核心处理和输出
 base_On_Local_Scan_Engine(){
   mkdir -p "${Local_Telnet_Scan_Result}"
-  printf "%-11b%-15b%-20b%-9b%-11b\n" "Number" "SourceHost" "DestinationHost" "Port" "Result"
+  printf "%-15b%-18b%-22b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for dest_hosts in "${All_Destination_Ip[@]}" ; do
     for scan_ports in "${All_Ports[@]}" ; do
       Per_Telnet_Result=${Local_Telnet_Scan_Result}/localhost_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
@@ -368,20 +368,20 @@ base_On_Local_Scan_Engine(){
 
 #函数功能：用于呈现远处主机扫描结果报告
 build_Ssh_Scan_Report(){
-  printf "Report:\nTotal Source Ip Number:%d,Total Destiantion Ip Number:%d,Total Ports:%d,Total Scan Number:%d\n" "${#All_Source_Ip[@]}" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Ssh_Count}"
-  printf "Connected Port Number:%d\n" "${Ssh_Connected_Count}"
-  printf "Refused Port Number:%-50d\n" "${Ssh_Refused_Count}"
-  printf "Close Port Number:%d\n" "${Ssh_Close_Count}"
-  printf "Sucess Login Server Number:%d\n" "${Ssh_Connected_Count}"
-  printf "Failed Login Server Number:%d,Failed to scan port number:%d\n" "${Failed_Ssh_Server}" "$(( Failed_Ssh_Server * ${#All_Destination_Ip[@]} * ${#All_Ports[@]} ))"
+  printf "Report:\n总源IP地址数量:%d,总目的IP地址数量:%d,总扫描端口数量:%d,总扫面端口次数:%d\n" "${#All_Source_Ip[@]}" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Ssh_Count}"
+  printf "扫描结果为Connected的端口数量:%d\n" "${Ssh_Connected_Count}"
+  printf "扫描结果为Refused的端口数量:%-50d\n" "${Ssh_Refused_Count}"
+  printf "扫描结果为Close的端口数量:%d\n" "${Ssh_Close_Count}"
+  printf "ssh成功登录远程主机数量:%d\n" "${Ssh_Connected_Count}"
+  printf "ssh失败登录远程主机数量:%d,导致无法扫描的端口数量:%d\n" "${Failed_Ssh_Server}" "$(( Failed_Ssh_Server * ${#All_Destination_Ip[@]} * ${#All_Ports[@]} ))"
 }
 
 #函数功能：用于呈现本地主机扫描结果报告
 build_Local_Scan_Report(){
-  printf "Report:\nTotal Ip Number:%d\tTotal Ports:%d\tTotal Scan Number:%d\n" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Local_Count}"
-  printf "Connected Port Number:%d\n" "${Local_Connected_Count}"
-  printf "Refused Port Number:%-50d\n" "${Local_Refused_Count}"
-  printf "Close Port Number:%d\n" "${Local_Close_Count}"
+  printf "Report:\n总目的IP地址数量:%d\t总扫描端口数量:%d\t总扫面端口次数:%d\n" "${#All_Destination_Ip[@]}" "${#All_Ports[@]}" "${Local_Count}"
+  printf "扫描结果为Connected的端口数量:%d\n" "${Local_Connected_Count}"
+  printf "扫描结果为Refused的端口数量:%-50d\n" "${Local_Refused_Count}"
+  printf "扫描结果为Close的端口数量:%d\n" "${Local_Close_Count}"
 }
 
 #函数功能：主函数用处判断脚本参数并调用其他函数
@@ -447,6 +447,7 @@ main(){
     esac
   done
 
+#限制目的IP地址数量和端口数量
   valid_Number_Range "${#All_Destination_Ip[@]}" 1 1000
   valid_Number_Range "${#All_Ports[@]}" 1 1000
 
@@ -458,6 +459,7 @@ main(){
     base_On_Local_Scan_Engine
     build_Local_Scan_Report
   else
+#限制远程主机模式中源IP地址数量
     valid_Number_Range "${#All_Source_Ip[@]}" 1 1000
     check_Command_Exsit ssh
     base_On_SSH_Scan_Engine
