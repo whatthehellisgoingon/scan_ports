@@ -108,7 +108,7 @@ bash ./scan_ports.sh -s 192.168.122.11,192.168.122.12/31,192.168.122.14-15 -d 22
 `~/source_ip.confg`文件内容
 
 ```bash
-cat > ~/source_ip.confg
+cat  ~/source_ip.confg
 192.168.122.11
 192.168.122.12/31
 192.168.122.14-15

@@ -5,19 +5,48 @@
 #脚本所在目录
 BaseDir=$(cd "$(dirname "$0")" && pwd || exit)
 
-#telnet结果的总目录
+#扫描结果的总目录
 Result_Dir=${BaseDir}/result
-#在本地主机扫描的结果目录
+#在本地主机pseudo device扫描方式的结果目录
+Local_Pd_Scan_Result=${Result_Dir}/local_pd_scan_result_$(date +%Y%m%d%H%M%S)
+#记录在本地主机pseudo device扫描方式端口为Connected(open)状态的结果日志
+Local_Pd_Scan_Connected_Log=${Local_Pd_Scan_Result}/local_pd_scan_connected.log
+#记录在本地主机pseudo device扫描方式的端口为Close状态的结果日志
+Local_Pd_Scan_Close_Log=${Local_Pd_Scan_Result}/local_pd_scan_close.log
+#ssh到远程主机pseudo device扫描方式的结果目录
+Ssh_Pd_Scan_Result=${Result_Dir}/ssh_pd_scan_result_$(date +%Y%m%d%H%M%S)
+#记录ssh到远程主机pseudo device扫描方式端口为Connected(open)状态的结果日志
+Ssh_Pd_Scan_Connected_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_connected.log
+#记录ssh到远程主机pseudo device扫描方式端口为Close状态的结果日志
+Ssh_Pd__Scan_Close_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_close.log
+
+#在本地主机telnet扫描方式的结果目录
 Local_Telnet_Scan_Result=${Result_Dir}/local_telnet_scan_result_$(date +%Y%m%d%H%M%S)
-#ssh到远程主机扫描的结果目录
+#记录本地主机telnet扫描方式端口为Connected(open)状态的结果日志
+Local_Telnet_Connected_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_connected.log
+#记录本地主机telnet扫描方式端口为Refuse状态的结果日志
+Local_Telnet_Refuse_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_refuse.log
+#记录本地主机telnet扫描方式端口为Close状态的结果日志
+Local_Telnet_Close_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_close.log
+
+#ssh到远程主机telnet扫描方式的结果目录
 Ssh_Telnet_Scan_Result=${Result_Dir}/ssh_telnet_scan_result_$(date +%Y%m%d%H%M%S)
+#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
+Ssh_Telnet_Connected_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_connected.log
+#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
+Ssh_Telnet_Refuse_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_refuse.log
+#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
+Ssh_Telnet_Close_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_close.log
 
 #telnet超时而被timeout结束的默认时间
 Default_Telnet_Time_Out_Second=3
 Telnet_Time_OUT_Second=""
 
-#本地主机扫描模式开关,默认是关闭的
+#本地主机扫描模式开关,默认是关闭的,脚本加-l参数可以开启本地主机扫描模式
 Localhost_Scan_Mode='FALSE'
+
+#在bash下伪设备(pseudo device)--/dev/tcp/host/port引擎扫描方式,默认是关闭的,脚本加--pd参数可以开启伪设备扫描引擎
+Pseudo_Scan_Engine='FALSE'
 
 #初始化数组
 #源IP地址数组
@@ -104,10 +133,10 @@ initial(){
 #函数功能：过滤$1中的前后空格，这里主要用于处理源、目的IP地址所在的文件路径中IP数据前后空格
 #需要1个参数：所需要过滤的字符
 trim() {
-    local var=$1
-    var=${var##+([[:space:]])}
-    var=${var%%+([[:space:]])}
-    echo -n "$var"
+  local var=$1
+  var=${var##+([[:space:]])}
+  var=${var%%+([[:space:]])}
+  echo -n "$var"
 }
 
 #函数功能：检测一个数字是否在非负整数集合范围内
@@ -305,7 +334,11 @@ check_Ports(){
 
 #函数功能：用于远程主机扫描核心处理和输出
 base_On_SSH_Scan_Engine(){
-  mkdir -p "${Ssh_Telnet_Scan_Result}"
+  if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+    mkdir -p "${Ssh_Pd_Scan_Result}"
+  else
+    mkdir -p "${Ssh_Telnet_Scan_Result}"
+  fi
   printf "%-15b%-35b%-20b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for source_hosts in "${All_Source_Ip[@]}" ; do
     ssh -q -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "hello@${source_hosts}" 'exit 0'
@@ -320,20 +353,32 @@ base_On_SSH_Scan_Engine(){
     fi
     for dest_hosts in "${All_Destination_Ip[@]}" ; do
       for scan_ports in "${All_Ports[@]}" ; do
-        Per_Telnet_Result=${Ssh_Telnet_Scan_Result}/remote_${source_hosts}_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
-        timeout --foreground ${Telnet_Time_OUT_Second} ssh -t "${source_hosts}" "echo '\r' | telnet ${dest_hosts} ${scan_ports}" > "${Per_Telnet_Result}" 2>&1
-        if grep -wq 'Connected' "${Per_Telnet_Result}" ; then
-          ((Ssh_Count+=1))
-          ((Ssh_Connected_Count+=1))
-          printf  "${GREEN}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}" "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Connected"
-        elif grep -wq 'refused' "${Per_Telnet_Result}" ;then
-          ((Ssh_Count+=1))
-          ((Ssh_Refused_Count+=1))
-          printf  "${BLUE}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}"  "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "refused"
+        if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+          if ssh "${source_hosts}" "timeout ${Telnet_Time_OUT_Second} bash -c \"</dev/tcp/${dest_hosts}/${scan_ports}\" && exit 0 || exit 1" > /dev/null 2>&1 ;then
+            ((Ssh_Count+=1))
+            ((Ssh_Connected_Count+=1))
+            printf  "${GREEN}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}" "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Connected" | tee -a "${Ssh_Pd_Scan_Connected_Log}"
+          else
+            ((Ssh_Count+=1))
+            ((Ssh_Close_Count+=1))
+            printf  "${RED}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}"   "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Close" | tee -a "${Ssh_Pd__Scan_Close_Log}"
+          fi
         else
-          ((Ssh_Count+=1))
-          ((Ssh_Close_Count+=1))
-          printf  "${RED}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}"   "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Close"
+          Per_Telnet_Result=${Ssh_Telnet_Scan_Result}/remote_${source_hosts}_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
+          ssh -t "${source_hosts}" "timeout --foreground ${Telnet_Time_OUT_Second} telnet ${dest_hosts} ${scan_ports}" > "${Per_Telnet_Result}" 2>&1
+          if grep -wq 'Connected' "${Per_Telnet_Result}" ; then
+            ((Ssh_Count+=1))
+            ((Ssh_Connected_Count+=1))
+            printf  "${GREEN}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}" "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Connected" | tee -a "${Ssh_Telnet_Connected_Log}"
+          elif grep -wq 'refused' "${Per_Telnet_Result}" ;then
+            ((Ssh_Count+=1))
+            ((Ssh_Refused_Count+=1))
+            printf  "${BLUE}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}"  "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "refused" | tee -a "${Ssh_Telnet_Refuse_Log}"
+          else
+            ((Ssh_Count+=1))
+            ((Ssh_Close_Count+=1))
+            printf  "${RED}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}"   "(${Ssh_Count})" "(${source_hosts_hostname})${source_hosts}" "${dest_hosts}" "${scan_ports}" "Close" | tee -a "${Ssh_Telnet_Close_Log}"
+          fi
         fi
       done
     done
@@ -342,28 +387,43 @@ base_On_SSH_Scan_Engine(){
 
 #函数功能：用于本地主机扫描核心处理和输出
 base_On_Local_Scan_Engine(){
-  mkdir -p "${Local_Telnet_Scan_Result}"
+  if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+    mkdir -p "${Local_Pd_Scan_Result}"
+  else
+    mkdir -p "${Local_Telnet_Scan_Result}"
+  fi
   printf "%-15b%-18b%-22b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for dest_hosts in "${All_Destination_Ip[@]}" ; do
     for scan_ports in "${All_Ports[@]}" ; do
-      Per_Telnet_Result=${Local_Telnet_Scan_Result}/localhost_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
-      timeout ${Telnet_Time_OUT_Second} telnet "${dest_hosts}" "${scan_ports}" > "${Per_Telnet_Result}" 2>&1
-      if grep -wq 'Connected' "${Per_Telnet_Result}" ; then
-        ((Local_Count+=1))
-        ((Local_Connected_Count+=1))
-        printf  "${GREEN}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}" "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Connected"
-      elif grep -wq 'refused' "${Per_Telnet_Result}" ;then
-        ((Local_Count+=1))
-        ((Local_Refused_Count+=1))
-        printf  "${BLUE}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}"  "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "refused"
+      if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+        if timeout ${Telnet_Time_OUT_Second} bash -c "</dev/tcp/${dest_hosts}/${scan_ports} " 2>/dev/null ;then
+          ((Local_Count+=1))
+          ((Local_Connected_Count+=1))
+          printf  "${GREEN}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}" "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Connected" | tee -a "${Local_Pd_Scan_Connected_Log}"
+        else
+          ((Local_Count+=1))
+          ((Local_Close_Count+=1))
+          printf  "${RED}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}"   "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Close"  | tee -a "${Local_Pd_Scan_Close_Log}"
+        fi
       else
-        ((Local_Count+=1))
-        ((Local_Close_Count+=1))
-        printf  "${RED}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}"   "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Close"
+        Per_Telnet_Result=${Local_Telnet_Scan_Result}/localhost_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
+        timeout ${Telnet_Time_OUT_Second} telnet "${dest_hosts}" "${scan_ports}" > "${Per_Telnet_Result}" 2>&1
+        if grep -wq 'Connected' "${Per_Telnet_Result}" ; then
+          ((Local_Count+=1))
+          ((Local_Connected_Count+=1))
+          printf  "${GREEN}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}" "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Connected" | tee -a "${Local_Telnet_Connected_Log}"
+        elif grep -wq 'refused' "${Per_Telnet_Result}" ;then
+          ((Local_Count+=1))
+          ((Local_Refused_Count+=1))
+          printf  "${BLUE}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}"  "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "refused" | tee -a "${Local_Telnet_Refuse_Log}"
+        else
+          ((Local_Count+=1))
+          ((Local_Close_Count+=1))
+          printf  "${RED}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}"   "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Close" | tee -a "${Local_Telnet_Close_Log}"
+        fi
       fi
     done
   done
-  
 }
 
 #函数功能：用于呈现远处主机扫描结果报告
@@ -372,7 +432,7 @@ build_Ssh_Scan_Report(){
   printf "扫描结果为Connected的端口数量:%d\n" "${Ssh_Connected_Count}"
   printf "扫描结果为Refused的端口数量:%-50d\n" "${Ssh_Refused_Count}"
   printf "扫描结果为Close的端口数量:%d\n" "${Ssh_Close_Count}"
-  printf "ssh成功登录远程主机数量:%d\n" "${Ssh_Connected_Count}"
+  printf "ssh成功登录远程主机数量:%d\n" "${Sucess_Ssh_Server}"
   printf "ssh失败登录远程主机数量:%d,导致无法扫描的端口数量:%d\n" "${Failed_Ssh_Server}" "$(( Failed_Ssh_Server * ${#All_Destination_Ip[@]} * ${#All_Ports[@]} ))"
 }
 
@@ -437,6 +497,10 @@ main(){
         Localhost_Scan_Mode='TRUE'
         shift
       ;;
+      --pd)
+        Pseudo_Scan_Engine='TRUE'
+        shift
+      ;;
       *)
         POSITIONAL+=("$1")
         set -- "${POSITIONAL[@]}"
@@ -447,19 +511,19 @@ main(){
     esac
   done
 
-#限制目的IP地址数量和端口数量
+  #限制目的IP地址数量和端口数量
   valid_Number_Range "${#All_Destination_Ip[@]}" 1 1000
   valid_Number_Range "${#All_Ports[@]}" 1 1000
 
   Telnet_Time_OUT_Second="${Telnet_Time_OUT_Second:-$Default_Telnet_Time_Out_Second}"
-  valid_Number_Range "$Telnet_Time_OUT_Second" 1 10
+  valid_Number_Range "${Telnet_Time_OUT_Second}" 1 10
 
-  if [ "$Localhost_Scan_Mode" = "TRUE" ]; then
+  if [ "${Localhost_Scan_Mode}" = "TRUE" ] ; then
     All_Source_Ip=()
     base_On_Local_Scan_Engine
     build_Local_Scan_Report
   else
-#限制远程主机模式中源IP地址数量
+    #限制远程主机模式中源IP地址数量
     valid_Number_Range "${#All_Source_Ip[@]}" 1 1000
     check_Command_Exsit ssh
     base_On_SSH_Scan_Engine
