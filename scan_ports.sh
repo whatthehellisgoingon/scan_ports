@@ -111,14 +111,23 @@ Source_Ip_Count_Max=500 #源IP地址数量最大值
 show_Help(){
   cat <<EOF
 用法:
-$0 [-l] [-t timeout_second] [--sourcefile /path/to/source/ip/file] [--destfile /path/to/destination/ip/file] [-s source_ip_format] [-d destination_ip_format] [-p port] [-h]
---ssh 开启ssh到远程主机telnet扫描模式
--t 设置telnet超时而被timeout命令结束的时间 不设置则取变量默认值
--s 源IP地址 要用于从跳板机ssh登录的远程主机，ssh要免密，不然还是使用本地主机模式。ip格式支持3种:1是192.168.1.1;2是192.168.1-254;3是192.168.1.1/24(cidr),这3种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-s 192.168.1.1,192.168.15、-s 192.168.1.1,192.168.1.15-20,192.168.1.0/25。
--d 目的IP地址 格式和源IP地址一样。
---sourcefile 源IP地址所在的文件路径 如果源IP地址很多而且没有规律，这个场景可以把这些IP放到一个文件中，一行建议只写一种IP格式。
---destfile 目的IP地址所在的文件路径 要求与--sourcefile参数一样
--p 端口 端口格式支持2种：1是80；2是1000-1050，这2种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-p 22,80,443、-p 80,443,1080-1090,9090-9095。
+$0 [--pd] [--ssh] [--sourcefile /path/to/source/ip/file] [--destfile /path/to/destination/ip/file] [-s source_ip_format] [-d destination_ip_format] [-p port]  [-t timeout_second] [-h]
+--pd
+ 开启pseudo device扫描模式,默认是telnet模式
+--ssh
+ 开启本地主机扫描模式，默认开启本地主机模式，要与-s参数搭配使用进行远程主机扫描
+-t 超时时间
+ timeout命令结束的时间,单位为秒,不设置则取脚本中Default_Telnet_Time_Out_Second变量默认值
+-s 源IP地址
+ 源IP地址是用于从跳板机ssh登录的远程主机IP，要与--ssh参数搭配使用进行远程主机扫描，ssh要免密，不然会被认为ssh连接失败。ip格式支持3种:1是192.168.1.1;2是192.168.1-254;3是192.168.1.1/24(cidr),这3种格式的任意一种格式可以利用逗号区分并组合在一起，例子如:-s 192.168.1.1,192.168.15、-s 192.168.1.1,192.168.1.15-20,192.168.1.0/25。
+-d 目的IP地址
+ 格式和源IP地址一样。
+--sourcefile 源IP地址所在的文件路径
+ 如果源IP地址很多而且没有规律，这个场景可以把这些IP放到一个文件中，一行建议只写一种IP格式。
+--destfile 目的IP地址所在的文件路径
+ 要求与--sourcefile参数一样
+-p 端口
+ 端口格式支持2种：1是80；2是1000-1050，这2种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-p 22,80,443、-p 80,443,1080-1090,9090-9095。
 -h 显示帮助
 EOF
   exit
