@@ -2,80 +2,106 @@
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>全局变量>>>>>>>>>>>>>>>>>>>>>>>>
-#脚本所在目录
-BaseDir=$(cd "$(dirname "$0")" && pwd || exit)
 
-#扫描结果的总目录
-Result_Dir=${BaseDir}/result
-#在本地主机pseudo device扫描方式的结果目录
-Local_Pd_Scan_Result=${Result_Dir}/local_pd_scan_result_$(date +%Y%m%d%H%M%S)
-#记录在本地主机pseudo device扫描方式端口为Connected(open)状态的结果日志
-Local_Pd_Scan_Connected_Log=${Local_Pd_Scan_Result}/local_pd_scan_connected.log
-#记录在本地主机pseudo device扫描方式的端口为Close状态的结果日志
-Local_Pd_Scan_Close_Log=${Local_Pd_Scan_Result}/local_pd_scan_close.log
-#ssh到远程主机pseudo device扫描方式的结果目录
-Ssh_Pd_Scan_Result=${Result_Dir}/ssh_pd_scan_result_$(date +%Y%m%d%H%M%S)
-#记录ssh到远程主机pseudo device扫描方式端口为Connected(open)状态的结果日志
-Ssh_Pd_Scan_Connected_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_connected.log
-#记录ssh到远程主机pseudo device扫描方式端口为Close状态的结果日志
-Ssh_Pd__Scan_Close_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_close.log
+BaseDir=$(cd "$(dirname "$0")" && pwd || exit) #脚本所在目录
 
-#在本地主机telnet扫描方式的结果目录
-Local_Telnet_Scan_Result=${Result_Dir}/local_telnet_scan_result_$(date +%Y%m%d%H%M%S)
-#记录本地主机telnet扫描方式端口为Connected(open)状态的结果日志
-Local_Telnet_Connected_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_connected.log
-#记录本地主机telnet扫描方式端口为Refuse状态的结果日志
-Local_Telnet_Refuse_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_refuse.log
-#记录本地主机telnet扫描方式端口为Close状态的结果日志
-Local_Telnet_Close_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_close.log
+Result_Dir=${BaseDir}/result #扫描结果的总目录
 
-#ssh到远程主机telnet扫描方式的结果目录
-Ssh_Telnet_Scan_Result=${Result_Dir}/ssh_telnet_scan_result_$(date +%Y%m%d%H%M%S)
-#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
-Ssh_Telnet_Connected_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_connected.log
-#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
-Ssh_Telnet_Refuse_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_refuse.log
-#记录ssh到远程主机telnet扫描方式端口为Connected(open)状态的结果日志
-Ssh_Telnet_Close_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_close.log
+Local_Pd_Scan_Result=${Result_Dir}/local_pd_scan_result_$(date +%Y%m%d%H%M%S) #在本地主机pseudo device扫描模式的结果目录
 
-#telnet超时而被timeout结束的默认时间
-Default_Telnet_Time_Out_Second=3
-Telnet_Time_OUT_Second=""
+Local_Pd_Scan_Connected_Log=${Local_Pd_Scan_Result}/local_pd_scan_connected.log #记录在本地主机pseudo device扫描模式端口为Connected(open)状态的结果日志
 
-#本地主机扫描模式开关,默认是关闭的,脚本加-l参数可以开启本地主机扫描模式
-Localhost_Scan_Mode='FALSE'
+Local_Pd_Scan_Close_Log=${Local_Pd_Scan_Result}/local_pd_scan_close.log #记录在本地主机pseudo device扫描模式的端口为Close状态的结果日志
 
-#在bash下伪设备(pseudo device)--/dev/tcp/host/port引擎扫描方式,默认是关闭的,脚本加--pd参数可以开启伪设备扫描引擎
-Pseudo_Scan_Engine='FALSE'
+Ssh_Pd_Scan_Result=${Result_Dir}/ssh_pd_scan_result_$(date +%Y%m%d%H%M%S) #ssh到远程主机pseudo device扫描模式的结果目录
 
-#初始化数组
-#源IP地址数组
-All_Source_Ip=()
-#目的IP地址数组
-All_Destination_Ip=()
-#所扫描端口的数组
-All_Ports=()
+Ssh_Pd_Scan_Connected_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_connected.log #记录ssh到远程主机pseudo device扫描模式端口为Connected(open)状态的结果日志
 
-#颜色设置
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-BLUE=$(tput setaf 4)
-NORMAL=$(tput sgr0)
+Ssh_Pd__Scan_Close_Log=${Ssh_Pd_Scan_Result}/ssh_pd_scan_close.log #记录ssh到远程主机pseudo device扫描模式端口为Close状态的结果日志
 
-#初始化扫描报告统计数值变量
-#ssh远程主机扫描模式统计数值变量
-Ssh_Count=0
-Ssh_Connected_Count=0
-Ssh_Refused_Count=0
-Ssh_Close_Count=0
-Sucess_Ssh_Server=0
-Failed_Ssh_Server=0
-#本地主机扫描模式统计数值变量
-Local_Count=0
-Local_Connected_Count=0
-Local_Refused_Count=0
-Local_Close_Count=0
+Local_Telnet_Scan_Result=${Result_Dir}/local_telnet_scan_result_$(date +%Y%m%d%H%M%S) #在本地主机telnet扫描模式的结果目录
+
+Local_Telnet_Connected_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_connected.log #记录本地主机telnet扫描模式端口为Connected(open)状态的结果日志
+
+Local_Telnet_Refuse_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_refuse.log #记录本地主机telnet扫描模式端口为Refuse状态的结果日志
+
+Local_Telnet_Close_Log=${Local_Telnet_Scan_Result}/local_telnet_scan_close.log #记录本地主机telnet扫描模式端口为Close状态的结果日志
+
+Ssh_Telnet_Scan_Result=${Result_Dir}/ssh_telnet_scan_result_$(date +%Y%m%d%H%M%S) #ssh到远程主机telnet扫描模式的结果目录
+
+Ssh_Telnet_Connected_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_connected.log #记录ssh到远程主机telnet扫描模式端口为Connected(open)状态的结果日志
+
+Ssh_Telnet_Refuse_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_refuse.log #记录ssh到远程主机telnet扫描模式端口为Connected(open)状态的结果日志
+
+Ssh_Telnet_Close_Log=${Ssh_Telnet_Scan_Result}/ssh_telnet_scan_close.log #记录ssh到远程主机telnet扫描模式端口为Connected(open)状态的结果日志
+
+Default_Telnet_Time_Out_Second=3 #telnet超时而被timeout结束的默认时间
+
+Telnet_Time_OUT_Second="" #初始化Telnet_Time_OUT_Second变量
+
+Ssh_Scan_Mode='FALSE' #本地主机扫描模式开关,默认是关闭的,脚本加-l参数可以开启本地主机扫描模式
+
+Pseudo_Scan_Engine='FALSE' #在bash下伪设备(pseudo device)--/dev/tcp/host/port引擎扫描模式,默认是关闭的,脚本加--pd参数可以开启伪设备扫描引擎
+
+All_Source_Ip=() #源IP地址数组
+
+All_Destination_Ip=() #目的IP地址数组
+
+All_Ports=() #所扫描端口的数组
+
+RED='\033[0;31m' #输出红颜色
+
+GREEN='\033[0;32m' #输出绿颜色
+
+YELLOW='\033[0;33m' #输出黄颜色
+
+BLUE='\033[0;34m' #输出蓝颜色
+
+NORMAL='\033[0m' #输出恢复
+
+Ssh_Count=0 #ssh到远程主机扫描模式总扫描次数
+
+Ssh_Connected_Count=0 #ssh到远程主机telnet扫描模式结果为Connected的次数
+
+Ssh_Refused_Count=0 #ssh到远程主机telnet扫描模式结果为Refused的次数,ssh到远程主机pseudo device扫描模式没有这种扫描结果
+
+Ssh_Close_Count=0 #ssh到远程主机telnet扫描模式结果为Close的次数
+
+Sucess_Ssh_Server=0 #ssh到远程主机成功次数
+
+Failed_Ssh_Server=0 #ssh到远程主机失败次数
+
+Local_Count=0 #本地主机扫描模式总扫描次数
+
+Local_Connected_Count=0 #本地主机扫描模式结果为Connected的次数
+
+Local_Refused_Count=0 #本地主机扫描模式结果为Refused的次数
+
+Local_Close_Count=0 #本地主机扫描模式结果为Close的次数
+
+Mask_size_Min=20 #可变长子网掩码最小值
+
+Mask_size_Max=32 #可变长子网掩码最大值
+
+Port_Number_Min=1 #端口号最小值
+
+Port_Number_Max=65535 #端口号最大值
+
+Timeout_Second_Min=1 #timeout命令超时最小秒值
+
+Timeout_Second_Max=10 #timeout命令超时最大秒值
+
+Destination_Ip_Count_Min=1 #目的IP地址数量最小值
+
+Destination_Ip_Count_Max=500 #目的IP地址数量最大值
+
+Port_Number_Count_Min=1 #端口数量最小值
+
+Port_Number_Count_Max=500 #端口数量最大值
+
+Source_Ip_Count_Min=1 #源IP地址数量最小值
+
+Source_Ip_Count_Max=500 #源IP地址数量最大值
 
 # >>>>>>>>>>>>>>>>>>>>>>>>全局变量>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -86,7 +112,7 @@ show_Help(){
   cat <<EOF
 用法:
 $0 [-l] [-t timeout_second] [--sourcefile /path/to/source/ip/file] [--destfile /path/to/destination/ip/file] [-s source_ip_format] [-d destination_ip_format] [-p port] [-h]
--l 开启本地主机扫描模式 当开启本地主机模式，注意：-s、--sourcefile参数里面源IP将回失去作用！
+--ssh 开启ssh到远程主机telnet扫描模式
 -t 设置telnet超时而被timeout命令结束的时间 不设置则取变量默认值
 -s 源IP地址 要用于从跳板机ssh登录的远程主机，ssh要免密，不然还是使用本地主机模式。ip格式支持3种:1是192.168.1.1;2是192.168.1-254;3是192.168.1.1/24(cidr),这3种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-s 192.168.1.1,192.168.15、-s 192.168.1.1,192.168.1.15-20,192.168.1.0/25。
 -d 目的IP地址 格式和源IP地址一样。
@@ -103,7 +129,7 @@ show_Error_Codes(){
   cat <<EOF
 错误代码解释:
 ERR-1:IP格式输入错误,请检查格式与帮助(-h)中格式一致!
-ERR-2:目的IP地址数量限制为1～1000，扫描端口(-p)数量范围限制为1-1000，telnet超时而被timeout结束的时间(-t)限制为1-10秒，如果是远程主机扫描模式,源IP地址数量限制范围为1～1000。IP的范围格式数值限制范围为0～255，IP的cidr格式的可变长子网掩码数值限制为20-32(内网大于20网络划分以上没有意义)。端口范围格式数值限制为1-65535。如果你需要跑超过1000个IP或端口的扫描,请分多次后台或多个终端界面跑脚本。
+ERR-2:目的IP地址数量限制为${Destination_Ip_Count_Min}-${Destination_Ip_Count_Max}，扫描端口(-p)数量范围限制为${Port_Number_Count_Min}-${Port_Number_Count_Max}，telnet超时而被timeout结束的时间(-t)限制为${Timeout_Second_Min}-${Timeout_Second_Max}秒，如果是远程主机扫描模式,源IP地址数量限制范围为${Source_Ip_Count_Min}-${Source_Ip_Count_Max}。IP的范围格式数值限制范围为0～255，IP的cidr格式的可变长子网掩码数值限制为${Mask_size_Min}-${Mask_size_Max}(内网大于20网络划分以上没有意义)。端口范围格式数值限制为${Port_Number_Min}-${Port_Number_Max}。如果你IP数量很多,请分多次后台或多个终端界面跑脚本。
 ERR-3:IP和端口范围格式，范围结束值不能小于范围起始值。如192.168.1.12-15中15大于12、1080-1085中1085大于1080。
 ERR-4:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不存在！
 ERR-5:源IP地址所在的文件路径(--sourcefile)或目的IP地址所在的文件路径(--destfile)不可读！
@@ -210,7 +236,7 @@ cidr_Tansfer_To_Ip_Ranges(){
   base=${cidr%/*}
   masksize=${cidr#*/}
 
-  valid_Number_Range "$masksize" 20 32
+  valid_Number_Range "$masksize" "${Mask_size_Min}" "${Mask_size_Max}"
   
   mask=$(( 0xFFFFFFFF << (32 - masksize) ))
   
@@ -298,8 +324,8 @@ deal_With_Ports_Format(){
     *-*)
       IFS=- read -r start end <<< "$cs_port"
 
-      valid_Number_Range "$start" 1 65535
-      valid_Number_Range "$end" 1 65535
+      valid_Number_Range "$start" "${Port_Number_Min}" "${Port_Number_Max}"
+      valid_Number_Range "$end" "${Port_Number_Min}" "${Port_Number_Max}"
 
       if (( start >= end )); then
         echo "ERR-3"
@@ -311,7 +337,7 @@ deal_With_Ports_Format(){
       done
     ;;
     *)
-      valid_Number_Range "$cs_port" 1 65535
+      valid_Number_Range "$cs_port" "${Port_Number_Min}" "${Port_Number_Max}"
       All_Ports+=("$cs_port")
     ;;
   esac
@@ -341,11 +367,11 @@ base_On_SSH_Scan_Engine(){
   fi
   printf "%-15b%-35b%-20b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for source_hosts in "${All_Source_Ip[@]}" ; do
-    ssh -q -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "hello@${source_hosts}" 'exit 0'
+    ssh -q -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "${source_hosts}" 'exit 0'
     local ssh_status=$?
     if (( ssh_status == 0 )); then
       ((Sucess_Ssh_Server+=1))
-      source_hosts_hostname=$(ssh hello@"${source_hosts}" 'hostname')
+      source_hosts_hostname=$(ssh "${source_hosts}" 'hostname')
     else
       ((Failed_Ssh_Server+=1))
       printf "${YELLOW}%-11b%-30b%-20b%-9b%-11b\n${NORMAL}" "(${Failed_Ssh_Server})" "Localhost login to" "${source_hosts}" "ssh" "Failed" 
@@ -354,6 +380,7 @@ base_On_SSH_Scan_Engine(){
     for dest_hosts in "${All_Destination_Ip[@]}" ; do
       for scan_ports in "${All_Ports[@]}" ; do
         if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+          # shellcheck disable=SC2029
           if ssh "${source_hosts}" "timeout ${Telnet_Time_OUT_Second} bash -c \"</dev/tcp/${dest_hosts}/${scan_ports}\" && exit 0 || exit 1" > /dev/null 2>&1 ;then
             ((Ssh_Count+=1))
             ((Ssh_Connected_Count+=1))
@@ -396,7 +423,7 @@ base_On_Local_Scan_Engine(){
   for dest_hosts in "${All_Destination_Ip[@]}" ; do
     for scan_ports in "${All_Ports[@]}" ; do
       if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
-        if timeout ${Telnet_Time_OUT_Second} bash -c "</dev/tcp/${dest_hosts}/${scan_ports} " 2>/dev/null ;then
+        if timeout "${Telnet_Time_OUT_Second}" bash -c "</dev/tcp/${dest_hosts}/${scan_ports} " 2>/dev/null ;then
           ((Local_Count+=1))
           ((Local_Connected_Count+=1))
           printf  "${GREEN}%-11b%-15b%-20b%-9b%-11b\n${NORMAL}" "(${Local_Count})" "localhost" "${dest_hosts}" "${scan_ports}" "Connected" | tee -a "${Local_Pd_Scan_Connected_Log}"
@@ -407,7 +434,7 @@ base_On_Local_Scan_Engine(){
         fi
       else
         Per_Telnet_Result=${Local_Telnet_Scan_Result}/localhost_to_${dest_hosts}_${scan_ports}_result_$(date +%Y%m%d%H%M%S%N).log
-        timeout ${Telnet_Time_OUT_Second} telnet "${dest_hosts}" "${scan_ports}" > "${Per_Telnet_Result}" 2>&1
+        timeout "${Telnet_Time_OUT_Second}" telnet "${dest_hosts}" "${scan_ports}" > "${Per_Telnet_Result}" 2>&1
         if grep -wq 'Connected' "${Per_Telnet_Result}" ; then
           ((Local_Count+=1))
           ((Local_Connected_Count+=1))
@@ -434,6 +461,11 @@ build_Ssh_Scan_Report(){
   printf "扫描结果为Close的端口数量:%d\n" "${Ssh_Close_Count}"
   printf "ssh成功登录远程主机数量:%d\n" "${Sucess_Ssh_Server}"
   printf "ssh失败登录远程主机数量:%d,导致无法扫描的端口数量:%d\n" "${Failed_Ssh_Server}" "$(( Failed_Ssh_Server * ${#All_Destination_Ip[@]} * ${#All_Ports[@]} ))"
+  if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+    printf "ssh到远程主机pseudo device扫描模式的结果目录:%s\n" "${Ssh_Pd_Scan_Result}"
+  else
+    printf "ssh到远程主机telnet扫描模式的结果目录:%s\n" "${Ssh_Telnet_Scan_Result}"
+  fi
 }
 
 #函数功能：用于呈现本地主机扫描结果报告
@@ -442,6 +474,11 @@ build_Local_Scan_Report(){
   printf "扫描结果为Connected的端口数量:%d\n" "${Local_Connected_Count}"
   printf "扫描结果为Refused的端口数量:%-50d\n" "${Local_Refused_Count}"
   printf "扫描结果为Close的端口数量:%d\n" "${Local_Close_Count}"
+  if [ "${Pseudo_Scan_Engine}" = "TRUE" ]; then
+    printf "本地主机pseudo device扫描模式的结果目录:%s\n" "${Local_Pd_Scan_Result}"
+  else
+    printf "在本地主机telnet扫描模式的结果目录:%s\n" "${Local_Telnet_Scan_Result}"
+  fi
 }
 
 #函数功能：主函数用处判断脚本参数并调用其他函数
@@ -490,11 +527,11 @@ main(){
       ;;
       -t)
         Telnet_Time_OUT_Second="$2"
-        valid_Number_Range "$Telnet_Time_OUT_Second" 1 20
+        valid_Number_Range "$Telnet_Time_OUT_Second" "${Timeout_Second_Min}" "${Timeout_Second_Max}"
         shift 2
       ;;
-      -l)
-        Localhost_Scan_Mode='TRUE'
+      --ssh)
+        Ssh_Scan_Mode='TRUE'
         shift
       ;;
       --pd)
@@ -512,22 +549,22 @@ main(){
   done
 
   #限制目的IP地址数量和端口数量
-  valid_Number_Range "${#All_Destination_Ip[@]}" 1 1000
-  valid_Number_Range "${#All_Ports[@]}" 1 1000
+  valid_Number_Range "${#All_Destination_Ip[@]}" "${Destination_Ip_Count_Min}" "${Destination_Ip_Count_Max}"
+  valid_Number_Range "${#All_Ports[@]}" "${Port_Number_Count_Min}" "${Port_Number_Count_Max}"
 
   Telnet_Time_OUT_Second="${Telnet_Time_OUT_Second:-$Default_Telnet_Time_Out_Second}"
-  valid_Number_Range "${Telnet_Time_OUT_Second}" 1 10
+  valid_Number_Range "${Telnet_Time_OUT_Second}" "${Timeout_Second_Min}" "${Timeout_Second_Max}"
 
-  if [ "${Localhost_Scan_Mode}" = "TRUE" ] ; then
+  if [ "${Ssh_Scan_Mode}" = "TRUE" ] ; then
+    #限制远程主机模式中源IP地址数量
+    valid_Number_Range "${#All_Source_Ip[@]}" "${Source_Ip_Count_Min}" "${Source_Ip_Count_Max}"
+    check_Command_Exsit ssh
+    base_On_SSH_Scan_Engine
+    build_Ssh_Scan_Report  
+  else
     All_Source_Ip=()
     base_On_Local_Scan_Engine
     build_Local_Scan_Report
-  else
-    #限制远程主机模式中源IP地址数量
-    valid_Number_Range "${#All_Source_Ip[@]}" 1 1000
-    check_Command_Exsit ssh
-    base_On_SSH_Scan_Engine
-    build_Ssh_Scan_Report
   fi
 }
 # >>>>>>>>>>>>>>>>>>>>>>>>全部函数>>>>>>>>>>>>>>>>>>>>>>>>
