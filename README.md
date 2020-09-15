@@ -1,10 +1,12 @@
 # scan_ports
 
+## 脚本质量:本脚本已通过[ShellCheck](https://www.shellcheck.net/ "ShellCheck")问题检测分析
+
 ## scan_ports.sh脚本背景
 
 扫描端口的方法有很多，如
 
-- nmap
+- [nmap](https://nmap.org/ "nmap")
 
 - ncat/nc
 
@@ -12,7 +14,7 @@
 
 - socat
 
-- bash中/dev/tcp/host/port和/dev/udp/host/port伪设备个功能--pseudo device(man bash中REDIRECTION部分)
+- bash中/dev/tcp/host/port和/dev/udp/host/port伪设备个功能--pseudo device(man bash中REDIRECTION部分,见[此链接](https://www.gnu.org/software/bash/manual/bash.html#Redirections "Redirections"))
 
 - telnet
 
