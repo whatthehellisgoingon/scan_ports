@@ -129,6 +129,34 @@ $0 [--pd] [--ssh] [--sourcefile /path/to/source/ip/file] [--destfile /path/to/de
 -p 端口
  端口格式支持2种：1是80；2是1000-1050，这2种格式的任意一种格式可以利用逗号区分并组合在一起,例子如:-p 22,80,443、-p 80,443,1080-1090,9090-9095。
 -h 显示帮助
+
+演示例子
+1. 本地主机扫描
+IP直接为参数进行本地主机扫描模式,使用telnet模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh -d 223.5.5.5,183.3.226.35,192.168.122.11,127.0.0.1 -p 22,53,80-82 -t 5
+
+IP直接为参数进行本地主机扫描模式,使用pseudo device模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --pd -d 223.5.5.5,183.3.226.35,192.168.122.11,127.0.0.1 -p 22,53,80-82 -t 5
+
+IP以文件形式作为参数进行本地扫描模式,使用telnet模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --destfile ~/destinatioin_ip.config -p 22,53,80-82 -t 5
+
+IP以文件形式作为参数进行本地扫描模式,使用pseudo device模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --pd --destfile ~/destinatioin_ip.config -p 22,53,80-82 -t 5
+
+2. 远程主机扫描模式
+IP直接为参数进行远程主机扫描模式,-s参数中远程主机IP已做好ssh免密,使用telnet模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --ssh -s 192.168.122.11,192.168.122.12/31,192.168.122.14-15 -d 223.5.5.5,183.3.226.35,192.168.122.11,127.0.0.1 -p 22,53,80-82 -t 5
+
+IP直接为参数进行远程主机扫描模式,-s参数中远程主机IP已做好ssh免密,使用pseudo device模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --ssh --pd -s 192.168.122.11,192.168.122.12/31,192.168.122.14-15 -d 223.5.5.5,183.3.226.35,192.168.122.11,127.0.0.1 -p 22,53,80-82 -t 5
+
+IP以文件形式作为参数进行远程主机扫描模式,-s参数中远程主机IP已做好ssh免密,使用telnet模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --ssh --sourcefile ~/source_ip.confg --destfile ~/destinatioin_ip.config -p 22,53,80-82 -t 5
+
+IP以文件形式作为参数进行远程主机扫描模式,-s参数中远程主机IP已做好ssh免密,使用pseudo device模式,命令演示(超时时间设置为5秒)如下:
+bash ./scan_ports.sh --ssh --pd --sourcefile ~/source_ip.confg --destfile ~/destinatioin_ip.config -p 22,53,80-82 -t 5
+
 EOF
   exit
 }
@@ -160,7 +188,7 @@ check_Command_Exsit(){
 
 #函数功能：脚本初始化检测，telnet、timeout命令是否存在，脚本所在目录是否有写权限
 initial(){
-  check_Command_Exsit telnet
+  cd "${BaseDir}" || exit
   check_Command_Exsit timeout
   [[ ! -w "${BaseDir}" ]] && exit
 }
@@ -204,7 +232,6 @@ valid_Number_Range(){
 valid_Ip(){ 
     local ip=$1 
     local stat=1
-    local ip_error_code="ERR-1"
  
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then 
         IFS='.' read -r -a ip <<<  "$ip"
@@ -213,7 +240,7 @@ valid_Ip(){
     fi
 
     if (( stat != 0 )); then
-      echo "${ip_error_code}:${ip[*]}"
+      echo "ERR-1:${ip[*]}"
       show_Error_Codes
     fi
 } 
@@ -376,6 +403,7 @@ base_On_SSH_Scan_Engine(){
   fi
   printf "%-15b%-35b%-20b%-12b%-b\n" "序号" "源地址" "目的地址" "端口" "结果"
   for source_hosts in "${All_Source_Ip[@]}" ; do
+    #检测本地主机与远程主机是否免密
     ssh -q -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "${source_hosts}" 'exit 0'
     local ssh_status=$?
     if (( ssh_status == 0 )); then
@@ -563,6 +591,10 @@ main(){
 
   Telnet_Time_OUT_Second="${Telnet_Time_OUT_Second:-$Default_Telnet_Time_Out_Second}"
   valid_Number_Range "${Telnet_Time_OUT_Second}" "${Timeout_Second_Min}" "${Timeout_Second_Max}"
+
+  if [ "${Pseudo_Scan_Engine}" = "FALSE" ] ; then
+    check_Command_Exsit telnet
+  fi
 
   if [ "${Ssh_Scan_Mode}" = "TRUE" ] ; then
     #限制远程主机模式中源IP地址数量
