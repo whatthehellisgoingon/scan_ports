@@ -1,6 +1,10 @@
 # scan_ports
 
-## 脚本质量:本脚本已通过[ShellCheck](https://www.shellcheck.net/ "ShellCheck")问题检测分析
+## 脚本功能
+
+- 用bash和telnet来扫描端口开关状态
+
+**脚本质量:本脚本已通过[ShellCheck](https://www.shellcheck.net/ "ShellCheck")问题检测分析**
 
 ## scan_ports.sh脚本背景
 
@@ -36,7 +40,11 @@ scan_ports.sh脚本支持两种扫描模式,如下:
 
 1. telent模式
 
+    扫描端口状态结果有三种:Connected、refused、Close
+
 2. bash中/dev/tcp/host/port和/dev/udp/host/port伪设备个功能--pseudo device模式
+
+    扫描端口状态结果有两种:Connected、Close
 
     pseudo device模式比telnet模式速度快.
 
