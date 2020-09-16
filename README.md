@@ -4,7 +4,7 @@
 
 ## scan_ports.sh脚本背景
 
-扫描端口的方法有很多，如
+扫描端口开关状态方法有很多，如
 
 - [nmap](https://nmap.org/ "nmap")
 
@@ -14,11 +14,11 @@
 
 - socat
 
-- bash中/dev/tcp/host/port和/dev/udp/host/port伪设备个功能--pseudo device(man bash中REDIRECTION部分,见[此链接](https://www.gnu.org/software/bash/manual/bash.html#Redirections "Redirections"))
+- bash中的[--enable-net-redirections](https://www.gnu.org/software/bash/manual/bash.html#Optional%20Features "enable-net-redirections")选项功能--/dev/tcp/host/port和/dev/udp/host/port伪设备pseudo device(man bash中REDIRECTION部分,见[此链接](https://www.gnu.org/software/bash/manual/bash.html#Redirections "Redirections"))
 
 - telnet
 
-如果在linux下仅使用bash、telnet,自己如何造一个端口扫描脚本呢？这个就是我写这个脚本的用途。
+如果在linux下仅使用bash、telnet,自己如何写一个扫描端口开关状态的bash脚本呢？这个就是我写这个脚本的用途。
 
 ## scan_ports.sh脚本说明
 
