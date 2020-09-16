@@ -14,7 +14,7 @@
 
 - socat
 
-- bash中的[--enable-net-redirections](https://www.gnu.org/software/bash/manual/bash.html#Optional%20Features "enable-net-redirections")选项功能--/dev/tcp/host/port和/dev/udp/host/port伪设备pseudo device(man bash中REDIRECTION部分,见[此链接](https://www.gnu.org/software/bash/manual/bash.html#Redirections "Redirections"))
+- bash中的enable-net-redirections选项功能--/dev/tcp/host/port和/dev/udp/host/port伪设备pseudo device(man bash中REDIRECTION部分,见[此链接](https://www.gnu.org/software/bash/manual/bash.html#Redirections "Redirections"))
 
 - telnet
 
